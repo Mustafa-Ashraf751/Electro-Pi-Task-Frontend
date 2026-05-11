@@ -4,11 +4,12 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { categories, restaurants, meals } from "@/lib/data";
+import { categories, Meal, meals } from "@/lib/data";
 import { MealCard } from "@/components/MealCard";
-import { RestaurantCard } from "@/components/RestaurantCard";
 import { useI18n } from "@/lib/i18n";
 import hero from "@/assets/hero-food.jpg";
+import { mealsApi } from "@/lib/api/meals-api";
+import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +29,20 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { t } = useI18n();
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  useEffect(() => {
+    mealsApi.getMeals().then(setMeals).catch((err) => setError(err.message)).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    mealsApi.getCategories().then(setCategories).catch((err) => setError(err.message)).finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -102,9 +117,15 @@ function Index() {
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {meals.slice(0, 8).map((m) => (
-              <MealCard key={m.id} meal={m} />
-            ))}
+            {loading ? (
+              <p className="col-span-full text-center text-muted-foreground py-12">Loading menu…</p>
+            ) : meals.length === 0 ? (
+              <p className="col-span-full text-center text-muted-foreground py-12">No meals available</p>
+            ) : (
+              meals.map((m) => (
+                <MealCard key={m._id} meal={m} />
+              ))
+            )}
           </div>
         </section>
 
@@ -117,9 +138,6 @@ function Index() {
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {restaurants.slice(0, 6).map((r) => (
-              <RestaurantCard key={r.id} restaurant={r} />
-            ))}
           </div>
         </section>
 

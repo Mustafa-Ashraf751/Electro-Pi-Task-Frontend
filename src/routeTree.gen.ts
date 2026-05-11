@@ -15,10 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RestaurantsIndexRouteImport } from './routes/restaurants.index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as RestaurantsIdRouteImport } from './routes/restaurants.$id'
 import { Route as OrdersTrackRouteImport } from './routes/orders.track'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
@@ -56,11 +54,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RestaurantsIndexRoute = RestaurantsIndexRouteImport.update({
-  id: '/restaurants/',
-  path: '/restaurants/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
@@ -70,11 +63,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
-} as any)
-const RestaurantsIdRoute = RestaurantsIdRouteImport.update({
-  id: '/restaurants/$id',
-  path: '/restaurants/$id',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersTrackRoute = OrdersTrackRouteImport.update({
   id: '/orders/track',
@@ -120,10 +108,8 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
-  '/restaurants/$id': typeof RestaurantsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
-  '/restaurants/': typeof RestaurantsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -137,10 +123,8 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
-  '/restaurants/$id': typeof RestaurantsIdRoute
   '/admin': typeof AdminIndexRoute
   '/orders': typeof OrdersIndexRoute
-  '/restaurants': typeof RestaurantsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,10 +140,8 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
-  '/restaurants/$id': typeof RestaurantsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
-  '/restaurants/': typeof RestaurantsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -176,10 +158,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/orders/track'
-    | '/restaurants/$id'
     | '/admin/'
     | '/orders/'
-    | '/restaurants/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -193,10 +173,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/orders/track'
-    | '/restaurants/$id'
     | '/admin'
     | '/orders'
-    | '/restaurants'
   id:
     | '__root__'
     | '/'
@@ -211,10 +189,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/orders/track'
-    | '/restaurants/$id'
     | '/admin/'
     | '/orders/'
-    | '/restaurants/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -225,9 +201,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   OrdersTrackRoute: typeof OrdersTrackRoute
-  RestaurantsIdRoute: typeof RestaurantsIdRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
-  RestaurantsIndexRoute: typeof RestaurantsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -274,13 +248,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/restaurants/': {
-      id: '/restaurants/'
-      path: '/restaurants'
-      fullPath: '/restaurants/'
-      preLoaderRoute: typeof RestaurantsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/orders/': {
       id: '/orders/'
       path: '/orders'
@@ -294,13 +261,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/restaurants/$id': {
-      id: '/restaurants/$id'
-      path: '/restaurants/$id'
-      fullPath: '/restaurants/$id'
-      preLoaderRoute: typeof RestaurantsIdRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/orders/track': {
       id: '/orders/track'
@@ -375,10 +335,18 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   OrdersTrackRoute: OrdersTrackRoute,
-  RestaurantsIdRoute: RestaurantsIdRoute,
   OrdersIndexRoute: OrdersIndexRoute,
-  RestaurantsIndexRoute: RestaurantsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

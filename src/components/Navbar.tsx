@@ -17,6 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useCart } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 export function Navbar() {
   const { t, lang, setLang } = useI18n();
@@ -26,10 +27,13 @@ export function Navbar() {
 
   const links = [
     { to: "/", label: t("home") },
-    { to: "/restaurants", label: t("restaurants") },
     { to: "/orders", label: t("orders") },
     { to: "/admin", label: t("admin") },
   ];
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() =>
+  !!localStorage.getItem("token")
+  );
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -95,17 +99,36 @@ export function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                {t("login")}
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="bg-gradient-primary shadow-soft">
-                {t("signup")}
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link to="/profile">
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  localStorage.removeItem("token");
+                  setIsLoggedIn(false);
+                }}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    {t("login")}
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="bg-gradient-primary shadow-soft">
+                    {t("signup")}
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
+
 
           <Sheet>
             <SheetTrigger asChild>
@@ -124,15 +147,27 @@ export function Navbar() {
                   <User className="me-2 inline h-4 w-4" /> {t("profile")}
                 </Link>
                 <div className="mt-4 flex flex-col gap-2">
-                  <Link to="/login">
-                    <Button variant="outline" className="w-full">
-                      {t("login")}
-                    </Button>
-                  </Link>
-                  <Link to="/register">
-                    <Button className="w-full bg-gradient-primary">{t("signup")}</Button>
-                  </Link>
-                </div>
+            {isLoggedIn ? (
+              <Button variant="outline" className="w-full" onClick={() => {
+                localStorage.removeItem("token");
+                setIsLoggedIn(false);
+              }}>
+                Logout
+              </Button>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full">
+                    {t("login")}
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button className="w-full bg-gradient-primary">{t("signup")}</Button>
+                </Link>
+              </>
+            )}
+          </div>
+
               </div>
             </SheetContent>
           </Sheet>
