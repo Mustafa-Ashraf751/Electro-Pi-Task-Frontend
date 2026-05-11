@@ -91,7 +91,7 @@ export function Navbar() {
             <Button variant="ghost" size="icon" className="relative" aria-label="Cart">
               <ShoppingBag className="h-5 w-5" />
               {count > 0 && (
-                <Badge className="absolute -end-1 -top-1 h-5 min-w-5 rounded-full bg-primary p-0 text-[10px]">
+                <Badge className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] leading- none">
                   {count}
                 </Badge>
               )}

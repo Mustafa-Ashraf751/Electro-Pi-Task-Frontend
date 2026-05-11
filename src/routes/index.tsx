@@ -4,7 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { categories, Meal, meals } from "@/lib/data";
+import { Meal} from "@/lib/data";
 import { MealCard } from "@/components/MealCard";
 import { useI18n } from "@/lib/i18n";
 import hero from "@/assets/hero-food.jpg";
@@ -33,10 +33,14 @@ function Index() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   useEffect(() => {
-    mealsApi.getMeals().then(setMeals).catch((err) => setError(err.message)).finally(() => setLoading(false));
-  }, []);
+    setLoading(true);
+    mealsApi.getMeals(activeCategory === "all" ? undefined : activeCategory)
+      .then(setMeals)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [activeCategory]);
 
   useEffect(() => {
     setLoading(true);
@@ -92,29 +96,44 @@ function Index() {
           <div className="mb-6 flex items-end justify-between">
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{t("categories")}</h2>
           </div>
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                to="/restaurants"
-                className="group flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all hover:-translate-y-1 hover:shadow-card"
+          <div className="grid grid-cols-3 gap-3 md:grid-cols-7">
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={`flex flex-col items-center gap-2 rounded-2xl border p-4 shadow-soft transition-all hover:-translate-y-1 hover:shadow-card ${
+                activeCategory === "all"
+                  ? "border-primary bg-primary/10"
+                  : "border-border/60 bg-card"
+              }`}
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-warm text-3xl">
+                🍽️
+              </div>
+              <span className="text-sm font-medium">All</span>
+            </button>
+            {categories.map((c: any) => (
+              <button
+                key={c._id}
+                onClick={() => setActiveCategory(c.name)}
+                className={`flex flex-col items-center gap-2 rounded-2xl border p-4 shadow-soft transition-all hover:-translate-y-1 hover:shadow-card ${
+                  activeCategory === c.name
+                    ? "border-primary bg-primary/10"
+                    : "border-border/60 bg-card"
+                }`}
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-warm text-3xl">
-                  {c.emoji}
+                  {c.emoji || "🍴"}
                 </div>
                 <span className="text-sm font-medium">{c.name}</span>
-              </Link>
+              </button>
             ))}
           </div>
         </section>
 
-        {/* Popular meals */}
+
+        {/* Menu */}
         <section className="container mx-auto px-4 py-12">
-          <div className="mb-6 flex items-end justify-between">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{t("popular")}</h2>
-            <Link to="/restaurants" className="text-sm font-medium text-primary hover:underline">
-              See all →
-            </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {loading ? (
@@ -126,37 +145,6 @@ function Index() {
                 <MealCard key={m._id} meal={m} />
               ))
             )}
-          </div>
-        </section>
-
-        {/* Featured restaurants */}
-        <section className="container mx-auto px-4 py-12">
-          <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{t("featured")}</h2>
-            <Link to="/restaurants" className="text-sm font-medium text-primary hover:underline">
-              See all →
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="container mx-auto px-4 py-12">
-          <div className="overflow-hidden rounded-3xl bg-gradient-primary p-8 text-primary-foreground shadow-glow md:p-12">
-            <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-              <div>
-                <h3 className="text-2xl font-bold md:text-3xl">Hungry? We've got you.</h3>
-                <p className="mt-2 max-w-md text-primary-foreground/85">
-                  Join thousands of happy customers ordering from top local restaurants.
-                </p>
-              </div>
-              <Link to="/register">
-                <Button size="lg" variant="secondary" className="shadow-card">
-                  Get started <ArrowRight className="ms-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
           </div>
         </section>
       </main>

@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { authApi } from "@/lib/api/auth-api";
-
+import type { Meal } from "@/lib/data";
+import { cartApi } from "@/lib/api/cart-api";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
@@ -26,20 +27,40 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-    try {
-      const data = await authApi.login(identifier, password);
-      //store the token in local storage
-      localStorage.setItem("token", data.token);
-      navigate({to:"/"});
-    } catch (err) {
-      setError("Invalid email/username or password");
-    } finally {
-      setIsLoading(false);
-    }
+      e.preventDefault();
+      setError("");
+      setIsLoading(true);
+      try {
+        const data = await authApi.login(identifier, password);
+        localStorage.setItem("token", data.token);
+
+        // Sync guest cart to backend
+        const CART_KEY = import.meta.env.VITE_CART_KEY;
+        const raw = localStorage.getItem(CART_KEY);
+        if (raw) {
+          const localCart = JSON.parse(raw) as { meal: Meal; qty: number }[];
+          if (localCart.length > 0) {
+            const apiItems = localCart.map((i) => ({
+              productId: i.meal._id,
+              title: i.meal.name,
+              image: i.meal.image,
+              price: i.meal.price,
+              quantity: i.qty,
+            }));
+            const totalPrice = localCart.reduce((s, i) => s + i.qty * i.meal.price, 0);
+            const totalQuantity = localCart.reduce((s, i) => s + i.qty, 0);
+            await cartApi.syncCart(apiItems, totalPrice, totalQuantity);
+          }
+        }
+
+        navigate({ to: "/" });
+      } catch (err) {
+        setError("Invalid email/username or password");
+      } finally {
+        setIsLoading(false);
+      }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-warm p-4">

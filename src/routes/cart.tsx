@@ -12,6 +12,8 @@ import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { ordersApi } from "@/lib/api/orders-api";
+
 export const Route = createFileRoute("/cart")({
   head: () => ({ meta: [{ title: "Cart & Checkout — Yummly" }] }),
   component: CartPage,
@@ -26,6 +28,14 @@ function CartPage() {
   const [discount, setDiscount] = useState(0);
   const delivery = subtotal > 0 ? 2.99 : 0;
   const total = Math.max(0, subtotal + delivery - discount);
+  const [isPlacing, setIsPlacing] = useState(false);
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [zip, setZip] = useState("");
+
 
   const apply = () => {
     if (promo.trim().toUpperCase() === "YUMMY10") {
@@ -36,13 +46,65 @@ function CartPage() {
     }
   };
 
-  const placeOrder = () => {
-    if (items.length === 0) return;
-    toast.success("Order placed!");
-    clear();
-    nav({ to: "/orders/track" });
-  };
-
+  const placeOrder = async () => {
+      if (items.length === 0) return;
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to place an order");
+        nav({ to: "/login" });
+        return;
+      }
+      setIsPlacing(true);
+      const orderItems = items.map((i) => ({
+        productId: i.meal._id,
+        title: i.meal.name,
+        image: i.meal.image,
+        price: i.meal.price,
+        quantity: i.qty,
+      }));
+      const totalPrice = total;
+      const totalQuantity = items.reduce((s, i) => s + i.qty, 0);
+      const deliveryAddress = { fullName, phone, street, city, zip };
+      try {
+        if (pay === "cod") {
+          // Cash on delivery — create order directly
+          await ordersApi.createOrder({
+            items: orderItems,
+            totalPrice,
+            totalQuantity,
+            paymentMethod: "cash",
+            deliveryAddress,
+          });
+          toast.success("Order placed successfully!");
+          clear();
+          nav({ to: "/orders" });
+        } else {
+          // Card — redirect to Stripe
+          // TODO: Replace with your actual Stripe checkout endpoint
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/payments/create-checkout-session`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              items: orderItems,
+              totalPrice,
+              totalQuantity,
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to create payment session");
+          const { url } = await res.json();
+          // Redirect to Stripe checkout page
+          window.location.href = url;
+        }
+      } catch (err) {
+        toast.error("Something went wrong. Please try again.");
+        console.error(err);
+      } finally {
+        setIsPlacing(false);
+      }
+};
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -54,9 +116,6 @@ function CartPage() {
             <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">Your cart is empty</h3>
             <p className="mt-1 text-sm text-muted-foreground">Add some delicious food to get started</p>
-            <Link to="/restaurants">
-              <Button className="mt-6 bg-gradient-primary">Browse restaurants</Button>
-            </Link>
           </Card>
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px]">
@@ -65,22 +124,22 @@ function CartPage() {
                 <h2 className="mb-4 text-lg font-semibold">Items</h2>
                 <div className="space-y-4">
                   {items.map((i) => (
-                    <div key={i.meal.id} className="flex items-center gap-4">
+                    <div key={i.meal._id} className="flex items-center gap-4">
                       <img src={i.meal.image} alt={i.meal.name} className="h-16 w-16 rounded-xl object-cover" />
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate font-medium">{i.meal.name}</h4>
                         <p className="text-sm text-muted-foreground">${i.meal.price.toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setQty(i.meal.id, i.qty - 1)}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setQty(i.meal._id, i.qty - 1)}>
                           <Minus className="h-3.5 w-3.5" />
                         </Button>
                         <span className="w-6 text-center text-sm font-medium">{i.qty}</span>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setQty(i.meal.id, i.qty + 1)}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setQty(i.meal._id, i.qty + 1)}>
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => remove(i.meal.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => remove(i.meal._id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -140,10 +199,6 @@ function CartPage() {
                   {discount > 0 && (
                     <div className="flex justify-between text-success"><span>Discount</span><span>−${discount.toFixed(2)}</span></div>
                   )}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Input placeholder={t("promoCode")} value={promo} onChange={(e) => setPromo(e.target.value)} />
-                  <Button variant="outline" onClick={apply}>{t("apply")}</Button>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">Try "YUMMY10" for 10% off</p>
                 <div className="mt-4 flex justify-between border-t border-border pt-4 text-base font-bold">

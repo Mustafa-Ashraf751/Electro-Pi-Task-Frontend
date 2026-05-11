@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, CartesianGrid,
 } from "recharts";
-import { meals } from "@/lib/data";
+import { Meal } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { mealsApi } from "@/lib/api/meals-api";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -34,6 +36,10 @@ const recent = [
 ];
 
 function AdminDashboard() {
+  const [topMeals, setTopMeals] = useState<Meal[]>([]);
+  useEffect(() => {
+    mealsApi.getMeals().then((data) => setTopMeals(data.slice(0, 5))).catch(console.error);
+  }, []);
   return (
     <div className="space-y-6">
       <div>
@@ -141,8 +147,8 @@ function AdminDashboard() {
         <Card className="border-border/60 p-5 shadow-soft">
           <h3 className="mb-4 font-semibold">Top selling</h3>
           <div className="space-y-3">
-            {meals.slice(0, 5).map((m, i) => (
-              <div key={m.id} className="flex items-center gap-3">
+            {topMeals.map((m, i) => (
+              <div key={m._id} className="flex items-center gap-3">
                 <span className="w-4 text-sm font-bold text-muted-foreground">{i + 1}</span>
                 <img src={m.image} alt={m.name} className="h-10 w-10 rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
