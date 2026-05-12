@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/card";
@@ -24,11 +24,16 @@ function formatDate(dateStr: string) {
 }
 
 function OrdersPage() {
+  const nav = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      nav({ to: "/login" });
+      return;
+    }
     ordersApi
       .getOrders()
       .then(setOrders)
@@ -71,6 +76,16 @@ function OrdersPage() {
                   >
                     {o.status}
                   </Badge>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      o.paymentStatus === "paid" ? "bg-green-100 text-green-700" :
+                      o.paymentStatus === "failed" ? "bg-red-100 text-red-700" :
+                      "bg-yellow-100 text-yellow-700"
+                    }
+                  >
+                    {o.paymentStatus === "paid" ? "Paid" : o.paymentStatus === "failed" ? "Payment Failed" : "Payment Pending"}
+                </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {formatDate(o.createdAt)} · {o.items.length} items · ${o.totalPrice.toFixed(2)}

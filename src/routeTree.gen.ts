@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OrderSuccessRouteImport } from './routes/order-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -18,8 +18,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OrdersTrackRouteImport } from './routes/orders.track'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
@@ -29,9 +27,9 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
+const OrderSuccessRoute = OrderSuccessRouteImport.update({
+  id: '/order-success',
+  path: '/order-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -69,16 +67,6 @@ const OrdersTrackRoute = OrdersTrackRouteImport.update({
   path: '/orders/track',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -100,13 +88,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
+  '/order-success': typeof OrderSuccessRoute
   '/register': typeof RegisterRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -115,13 +101,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
+  '/order-success': typeof OrderSuccessRoute
   '/register': typeof RegisterRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
   '/admin': typeof AdminIndexRoute
   '/orders': typeof OrdersIndexRoute
@@ -132,13 +116,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
+  '/order-success': typeof OrderSuccessRoute
   '/register': typeof RegisterRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/orders/track': typeof OrdersTrackRoute
   '/admin/': typeof AdminIndexRoute
   '/orders/': typeof OrdersIndexRoute
@@ -150,13 +132,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/login'
-    | '/profile'
+    | '/order-success'
     | '/register'
     | '/admin/analytics'
     | '/admin/orders'
     | '/admin/products'
-    | '/admin/settings'
-    | '/admin/users'
     | '/orders/track'
     | '/admin/'
     | '/orders/'
@@ -165,13 +145,11 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/login'
-    | '/profile'
+    | '/order-success'
     | '/register'
     | '/admin/analytics'
     | '/admin/orders'
     | '/admin/products'
-    | '/admin/settings'
-    | '/admin/users'
     | '/orders/track'
     | '/admin'
     | '/orders'
@@ -181,13 +159,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/login'
-    | '/profile'
+    | '/order-success'
     | '/register'
     | '/admin/analytics'
     | '/admin/orders'
     | '/admin/products'
-    | '/admin/settings'
-    | '/admin/users'
     | '/orders/track'
     | '/admin/'
     | '/orders/'
@@ -198,7 +174,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
   LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRoute
+  OrderSuccessRoute: typeof OrderSuccessRoute
   RegisterRoute: typeof RegisterRoute
   OrdersTrackRoute: typeof OrdersTrackRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
@@ -213,11 +189,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
+    '/order-success': {
+      id: '/order-success'
+      path: '/order-success'
+      fullPath: '/order-success'
+      preLoaderRoute: typeof OrderSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -269,20 +245,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/products': {
       id: '/admin/products'
       path: '/products'
@@ -311,8 +273,6 @@ interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminProductsRoute: typeof AdminProductsRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -320,8 +280,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminProductsRoute: AdminProductsRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
-  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -332,7 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   LoginRoute: LoginRoute,
-  ProfileRoute: ProfileRoute,
+  OrderSuccessRoute: OrderSuccessRoute,
   RegisterRoute: RegisterRoute,
   OrdersTrackRoute: OrdersTrackRoute,
   OrdersIndexRoute: OrdersIndexRoute,

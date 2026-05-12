@@ -25,15 +25,30 @@ export function Navbar() {
   const { count } = useCart();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
-  const links = [
-    { to: "/", label: t("home") },
-    { to: "/orders", label: t("orders") },
-    { to: "/admin", label: t("admin") },
-  ];
+ 
+
 
   const [isLoggedIn, setIsLoggedIn] = useState(() =>
   !!localStorage.getItem("token")
   );
+
+  function getUserRole(): string | null {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role || null;
+  } catch {
+    return null;
+  }
+}
+
+
+  const links = [
+  { to: "/", label: t("home") },
+  ...(isLoggedIn ? [{ to: "/orders", label: t("orders") }] : []),
+  ...(isLoggedIn && getUserRole() === "admin" ? [{ to: "/admin", label: t("admin") }] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -101,11 +116,11 @@ export function Navbar() {
           <div className="hidden items-center gap-2 md:flex">
             {isLoggedIn ? (
               <>
-                <Link to="/profile">
+                {/* <Link to="/profile">
                   <Button variant="ghost" size="icon">
                     <User className="h-5 w-5" />
                   </Button>
-                </Link>
+                </Link> */}
                 <Button variant="ghost" size="sm" onClick={() => {
                   localStorage.removeItem("token");
                   setIsLoggedIn(false);
@@ -143,9 +158,6 @@ export function Navbar() {
                     {l.label}
                   </Link>
                 ))}
-                <Link to="/profile" className="rounded-lg px-3 py-2 text-sm hover:bg-muted">
-                  <User className="me-2 inline h-4 w-4" /> {t("profile")}
-                </Link>
                 <div className="mt-4 flex flex-col gap-2">
             {isLoggedIn ? (
               <Button variant="outline" className="w-full" onClick={() => {

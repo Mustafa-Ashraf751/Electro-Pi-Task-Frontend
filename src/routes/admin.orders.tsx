@@ -1,74 +1,100 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ordersApi, type Order } from "@/lib/api/orders-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/orders")({
   component: AdminOrders,
 });
 
-const orders = Array.from({ length: 12 }).map((_, i) => ({
-  id: `YM-${10240 - i}`,
-  customer: ["Jane Doe", "Mark Smith", "Lina K.", "Omar A.", "Sara P."][i % 5],
-  items: (i % 4) + 1,
-  total: +(8 + Math.random() * 40).toFixed(2),
-  status: ["Delivered", "On the way", "Preparing", "Delivered", "Cancelled"][i % 5],
-  date: `May ${10 - (i % 8)}`,
-}));
+const STATUS_OPTIONS = ["pending", "preparing", "on the way", "delivered", "cancelled"];
 
 function AdminOrders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    ordersApi.getAllOrders().then(setOrders).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const updated = await ordersApi.updateOrderStatus(orderId, newStatus);
+      setOrders((cur) => cur.map((o) => (o._id === orderId ? updated : o)));
+      toast.success(`Status updated to "${newStatus}"`);
+    } catch {
+      toast.error("Failed to update status");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-        <p className="text-muted-foreground">Manage and review all incoming orders.</p>
+        <p className="text-muted-foreground">Monitor all incoming orders.</p>
       </div>
-      <Card className="border-border/60 p-5 shadow-soft">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search orders…" className="ps-9" />
-          </div>
-          <Button variant="outline">Export</Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="py-2 text-start font-medium">Order</th>
-                <th className="py-2 text-start font-medium">Customer</th>
-                <th className="py-2 text-start font-medium">Items</th>
-                <th className="py-2 text-start font-medium">Date</th>
-                <th className="py-2 text-start font-medium">Status</th>
-                <th className="py-2 text-end font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr key={o.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
-                  <td className="py-3 font-medium">{o.id}</td>
-                  <td className="py-3 text-muted-foreground">{o.customer}</td>
-                  <td className="py-3 text-muted-foreground">{o.items}</td>
-                  <td className="py-3 text-muted-foreground">{o.date}</td>
-                  <td className="py-3">
-                    <Badge
-                      variant="secondary"
-                      className={
-                        o.status === "Delivered" ? "bg-success/15 text-success" :
-                        o.status === "Cancelled" ? "bg-destructive/15 text-destructive" :
-                        "bg-primary/15 text-primary"
-                      }
-                    >{o.status}</Badge>
-                  </td>
-                  <td className="py-3 text-end font-medium">${o.total.toFixed(2)}</td>
+
+      {loading ? (
+        <p className="text-muted-foreground">Loading…</p>
+      ) : orders.length === 0 ? (
+        <Card className="border-border/60 p-12 text-center shadow-soft">
+          <p className="text-muted-foreground">No orders yet.</p>
+        </Card>
+      ) : (
+        <Card className="border-border/60 shadow-soft overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-start font-medium">Order</th>
+                  <th className="px-4 py-3 text-start font-medium">Items</th>
+                  <th className="px-4 py-3 text-start font-medium">Date</th>
+                  <th className="px-4 py-3 text-start font-medium">Status</th>
+                  <th className="px-4 py-3 text-start font-medium">Payment</th>
+                  <th className="px-4 py-3 text-end font-medium">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o._id} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-3 font-medium">{o._id.slice(-6).toUpperCase()}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{o.items.length}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(o.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={o.status}
+                        onChange={(e) => handleStatusChange(o._id, e.target.value)}
+                        className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant="secondary"
+                        className={
+                          o.paymentStatus === "paid" ? "bg-green-100 text-green-700" :
+                          o.paymentStatus === "failed" ? "bg-red-100 text-red-700" :
+                          "bg-yellow-100 text-yellow-700"
+                        }
+                      >
+                        {o.paymentStatus}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-end font-medium">${o.totalPrice.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingBag, Package, Users, BarChart3, Settings, Moon, Sun, Bell, Search } from "lucide-react";
+import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, ShoppingBag, Package, Moon, Sun, Bell, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin dashboard — Yummly" }] }),
@@ -25,14 +26,26 @@ const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/products", label: "Products", icon: Package },
-  { to: "/admin/users", label: "Users", icon: Users },
-  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 function AdminLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { theme, toggle } = useTheme();
+  const nav = useNavigate();
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      nav({ to: "/login" });
+      return;
+    }
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.role !== "admin") nav({ to: "/" });
+    } catch {
+      nav({ to: "/login" });
+    }
+  }, []);
+  if (!localStorage.getItem("token")) return null
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-muted/30">
@@ -79,6 +92,16 @@ function AdminLayout() {
               </Button>
               <Button variant="ghost" size="icon"><Bell className="h-5 w-5" /></Button>
               <div className="ms-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-primary text-sm font-bold text-primary-foreground">A</div>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  nav({ to: "/" });
+                }}
+              >
+                Logout
+            </Button>
             </div>
           </header>
           <main className="flex-1 p-6">

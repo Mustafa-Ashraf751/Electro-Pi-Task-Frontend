@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { meals as initial, type Meal } from "@/lib/data";
+import type { Meal } from "@/lib/data";
+import { mealsApi } from "@/lib/api/meals-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/products")({
@@ -17,19 +18,38 @@ export const Route = createFileRoute("/admin/products")({
 });
 
 function AdminProducts() {
-  const [list, setList] = useState<Meal[]>(initial);
+  const [list, setList] = useState<Meal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Meal | null>(null);
   const [open, setOpen] = useState(false);
 
-  const onSave = (m: Meal) => {
-    setList((cur) => {
-      const ex = cur.find((x) => x.id === m.id);
-      return ex ? cur.map((x) => (x.id === m.id ? m : x)) : [m, ...cur];
-    });
-    setOpen(false);
-    setEditing(null);
-    toast.success("Product saved");
-  };
+  useEffect(() => {
+    mealsApi.getMeals().then(setList).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const onSave = async (m: Meal) => {
+  try {
+    const payload = { name: m.name, description: m.description, price: m.price, category: m.category, image: m.image };
+
+    if (editing) {
+      // Update existing
+      const updated = await mealsApi.updateMeal(m._id, payload);
+      setList((cur) => cur.map((x) => (x._id === m._id ? updated : x)));
+      toast.success("Product updated");
+    } else {
+      // Create new
+      const created = await mealsApi.createMeal(payload);
+      setList((cur) => [created, ...cur]);
+      toast.success("Product created");
+    }
+  } catch (err) {
+    toast.error("Failed to save product");
+    console.error(err);
+  }
+  setOpen(false);
+  setEditing(null);
+};
+
 
   return (
     <div className="space-y-6">
@@ -48,47 +68,59 @@ function AdminProducts() {
         </Dialog>
       </div>
 
-      <Card className="border-border/60 p-5 shadow-soft">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="py-2 text-start font-medium">Product</th>
-                <th className="py-2 text-start font-medium">Category</th>
-                <th className="py-2 text-end font-medium">Price</th>
-                <th className="py-2 text-end font-medium">Rating</th>
-                <th className="py-2 text-end font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((m) => (
-                <tr key={m.id} className="border-b border-border/60 last:border-0">
-                  <td className="py-3">
-                    <div className="flex items-center gap-3">
-                      <img src={m.image} alt={m.name} className="h-10 w-10 rounded-lg object-cover" />
-                      <div>
-                        <p className="font-medium">{m.name}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{m.description}</p>
+      {loading ? (
+        <p className="text-muted-foreground">Loading…</p>
+      ) : (
+        <Card className="border-border/60 p-5 shadow-soft">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th className="py-2 text-start font-medium">Product</th>
+                  <th className="py-2 text-start font-medium">Category</th>
+                  <th className="py-2 text-end font-medium">Price</th>
+                  <th className="py-2 text-end font-medium">Rating</th>
+                  <th className="py-2 text-end font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((m) => (
+                  <tr key={m._id} className="border-b border-border/60 last:border-0">
+                    <td className="py-3">
+                      <div className="flex items-center gap-3">
+                        <img src={m.image} alt={m.name} className="h-10 w-10 rounded-lg object-cover" />
+                        <div>
+                          <p className="font-medium">{m.name}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{m.description}</p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-3 text-muted-foreground capitalize">{m.category}</td>
-                  <td className="py-3 text-end font-medium">${m.price.toFixed(2)}</td>
-                  <td className="py-3 text-end text-muted-foreground">{m.rating}</td>
-                  <td className="py-3 text-end">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setOpen(true); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setList((c) => c.filter((x) => x.id !== m.id)); toast.success("Deleted"); }}>
+                    </td>
+                    <td className="py-3 text-muted-foreground capitalize">{m.category}</td>
+                    <td className="py-3 text-end font-medium">${m.price.toFixed(2)}</td>
+                    <td className="py-3 text-end text-muted-foreground">{m.rating}</td>
+                    <td className="py-3 text-end">
+                      <Button variant="ghost" size="icon" onClick={() => { setEditing(m); setOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={async () => {
+                          try {
+                            await mealsApi.deleteMeal(m._id);
+                            setList((c) => c.filter((x) => x._id !== m._id));
+                            toast.success("Deleted");
+                          } catch {
+                            toast.error("Failed to delete");
+                          }
+                      }}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -98,6 +130,16 @@ function ProductDialog({ meal, onSave }: { meal: Meal | null; onSave: (m: Meal) 
   const [desc, setDesc] = useState(meal?.description ?? "");
   const [price, setPrice] = useState(meal?.price ?? 0);
   const [category, setCategory] = useState(meal?.category ?? "pizza");
+  const [image, setImage] = useState(meal?.image ?? "");
+
+  useEffect(() => {
+    setName(meal?.name ?? "");
+    setDesc(meal?.description ?? "");
+    setPrice(meal?.price ?? 0);
+    setCategory(meal?.category ?? "pizza");
+    setImage(meal?.image ?? "");
+  }, [meal]);
+
   return (
     <DialogContent>
       <DialogHeader>
@@ -106,6 +148,7 @@ function ProductDialog({ meal, onSave }: { meal: Meal | null; onSave: (m: Meal) 
       <div className="grid gap-4">
         <div className="space-y-2"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="space-y-2"><Label>Description</Label><Textarea value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+        <div className="space-y-2"><Label>Image URL</Label><Input value={image} onChange={(e) => setImage(e.target.value)} /></div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2"><Label>Price ($)</Label><Input type="number" step="0.01" value={price} onChange={(e) => setPrice(+e.target.value)} /></div>
           <div className="space-y-2"><Label>Category</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} /></div>
@@ -116,11 +159,13 @@ function ProductDialog({ meal, onSave }: { meal: Meal | null; onSave: (m: Meal) 
           className="bg-gradient-primary"
           onClick={() =>
             onSave({
-              id: meal?.id ?? `m${Date.now()}`,
-              name, description: desc, price, category,
+              _id: meal?._id ?? `m${Date.now()}`,
+              name,
+              description: desc,
+              price,
+              category,
               rating: meal?.rating ?? 4.5,
-              image: meal?.image ?? "",
-              restaurantId: meal?.restaurantId ?? "r1",
+              image,
             })
           }
         >

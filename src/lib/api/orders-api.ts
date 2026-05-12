@@ -20,6 +20,7 @@ export type Order = {
   totalQuantity: number;
   status: string;
   createdAt: string;
+  paymentStatus: string;
   deliveryAddress?: {
     fullName?: string;
     phone?: string;
@@ -69,4 +70,33 @@ export const ordersApi = {
     if (!res.ok) throw new Error("Failed to create order");
     return res.json();
   },
+
+  async getAllOrders(): Promise<Order[]> {
+    const token = getToken();
+    if (!token) return [];
+
+    const res = await fetch(`${API_URL}/orders/admin/all`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch all orders");
+    return res.json();
+  },
+
+  async updateOrderStatus(orderId: string, status: string): Promise<Order> {
+    const token = getToken();
+    if (!token) throw new Error("Unauthorized");
+
+    const res = await fetch(`${API_URL}/orders/${orderId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error("Failed to update order status");
+    return res.json();
+  },
+
+
 };

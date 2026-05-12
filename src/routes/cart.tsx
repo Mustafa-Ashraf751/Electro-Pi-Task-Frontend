@@ -65,6 +65,11 @@ function CartPage() {
       const totalPrice = total;
       const totalQuantity = items.reduce((s, i) => s + i.qty, 0);
       const deliveryAddress = { fullName, phone, street, city, zip };
+      if (!fullName || !phone || !street || !city || !zip) {
+        toast.error("Please fill in your delivery address");
+        return;
+      }
+
       try {
         if (pay === "cod") {
           // Cash on delivery — create order directly
@@ -79,23 +84,24 @@ function CartPage() {
           clear();
           nav({ to: "/orders" });
         } else {
-          // Card — redirect to Stripe
-          // TODO: Replace with your actual Stripe checkout endpoint
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/payments/create-checkout-session`, {
+          // Card — Step 1: Create the order first
+          const order = await ordersApi.createOrder({
+            items: orderItems,
+            totalPrice,
+            totalQuantity,
+            paymentMethod: "card",
+            deliveryAddress,
+          });
+          // Step 2: Call payments/checkout/:orderId
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/payments/checkout/${order._id}`, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              items: orderItems,
-              totalPrice,
-              totalQuantity,
-            }),
           });
-          if (!res.ok) throw new Error("Failed to create payment session");
+          if (!res.ok) throw new Error("Failed to create checkout session");
           const { url } = await res.json();
-          // Redirect to Stripe checkout page
+          // Step 3: Redirect to Stripe
           window.location.href = url;
         }
       } catch (err) {
@@ -152,23 +158,23 @@ function CartPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Full name</Label>
-                    <Input placeholder="Jane Doe" />
+                    <Input placeholder="Jane Doe"  value={fullName} onChange={(e) => setFullName(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Phone</Label>
-                    <Input placeholder="+1 555 000 1234" />
+                    <Input placeholder="+1 555 000 1234"  value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label>Street address</Label>
-                    <Input placeholder="123 Main St, Apt 4B" />
+                    <Input placeholder="123 Main St, Apt 4B"  value={street} onChange={(e) => setStreet(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>City</Label>
-                    <Input placeholder="New York" />
+                    <Input placeholder="New York"  value={city} onChange={(e) => setCity(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>ZIP</Label>
-                    <Input placeholder="10001" />
+                    <Input placeholder="10001"  value={zip} onChange={(e) => setZip(e.target.value)} />
                   </div>
                 </div>
               </Card>
