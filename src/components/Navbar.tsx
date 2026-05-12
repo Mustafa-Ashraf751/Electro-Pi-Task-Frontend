@@ -1,7 +1,6 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Moon, Search, ShoppingBag, Sun, Globe, User, Menu } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Moon, ShoppingBag, Sun, Globe, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +23,7 @@ export function Navbar() {
   const { theme, toggle } = useTheme();
   const { count } = useCart();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
 
  
 
@@ -53,32 +53,27 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <span className="text-lg">🍽️</span>
-          </div>
-          <span className="text-lg font-bold tracking-tight">{t("appName")}</span>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+              <span className="text-lg">🍽️</span>
+            </div>
+            <span className="text-lg font-bold tracking-tight">{t("appName")}</span>
+          </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
-                path === l.to ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden flex-1 max-w-sm md:block">
-          <div className="relative">
-            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="ps-9 rounded-xl bg-muted/60 border-0" placeholder={t("searchPlaceholder")} />
-          </div>
+          <nav className="hidden items-center gap-1 md:flex">
+            {links.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
+                  path === l.to ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <div className="flex items-center gap-1">
@@ -124,6 +119,7 @@ export function Navbar() {
                 <Button variant="ghost" size="sm" onClick={() => {
                   localStorage.removeItem("token");
                   setIsLoggedIn(false);
+                  navigate({ to: "/" });
                 }}>
                   Logout
                 </Button>
@@ -163,6 +159,7 @@ export function Navbar() {
               <Button variant="outline" className="w-full" onClick={() => {
                 localStorage.removeItem("token");
                 setIsLoggedIn(false);
+                navigate({ to: "/" });
               }}>
                 Logout
               </Button>

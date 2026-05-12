@@ -98,5 +98,16 @@ export const ordersApi = {
     return res.json();
   },
 
+  async getOrderById(orderId: string): Promise<Order> {
+    const token = getToken();
+    if (!token) throw new Error("Unauthorized");
+
+    const res = await fetch(`${API_URL}/orders/${orderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch order");
+    return res.json();
+  },
+
 
 };

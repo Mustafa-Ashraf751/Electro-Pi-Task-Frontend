@@ -1,15 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Search, ArrowRight, Truck, Clock, Shield } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Meal} from "@/lib/data";
+import { Meal } from "@/lib/data";
 import { MealCard } from "@/components/MealCard";
 import { useI18n } from "@/lib/i18n";
 import hero from "@/assets/hero-food.jpg";
 import { mealsApi } from "@/lib/api/meals-api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,18 +34,32 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch meals when category changes
   useEffect(() => {
     setLoading(true);
-    mealsApi.getMeals(activeCategory === "all" ? undefined : activeCategory)
+    mealsApi
+      .getMeals(activeCategory === "all" ? undefined : activeCategory)
       .then(setMeals)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [activeCategory]);
 
+  // Fetch categories once
   useEffect(() => {
-    setLoading(true);
-    mealsApi.getCategories().then(setCategories).catch((err) => setError(err.message)).finally(() => setLoading(false));
+    mealsApi
+      .getCategories()
+      .then(setCategories)
+      .catch((err) => setError(err.message));
   }, []);
+
+  // Client-side filtering by meal name — instant, no API call, no debounce
+  const filteredMeals = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return meals;
+    return meals.filter((m) => m.name.toLowerCase().includes(query));
+  }, [meals, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,10 +79,18 @@ function Index() {
               <div className="relative max-w-md">
                 <Search className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="hero-search"
                   className="h-14 ps-12 pe-32 rounded-2xl border-border/60 bg-card text-base shadow-card"
                   placeholder={t("searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Button className="absolute end-1.5 top-1/2 h-11 -translate-y-1/2 bg-gradient-primary px-5 shadow-soft">
+                <Button
+                  className="absolute end-1.5 top-1/2 h-11 -translate-y-1/2 bg-gradient-primary px-5 shadow-soft"
+                  onClick={() =>
+                    document.getElementById("menu-section")?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
                   Search <ArrowRight className="ms-1 h-4 w-4" />
                 </Button>
               </div>
@@ -129,19 +151,47 @@ function Index() {
           </div>
         </section>
 
-
         {/* Menu */}
-        <section className="container mx-auto px-4 py-12">
-          <div className="mb-6">
+        <section id="menu-section" className="container mx-auto px-4 py-12">
+          <div className="mb-6 flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{t("popular")}</h2>
+            {searchQuery.trim() && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {filteredMeals.length} result{filteredMeals.length !== 1 ? "s" : ""} for &quot;{searchQuery.trim()}&quot;
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs"
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {loading ? (
               <p className="col-span-full text-center text-muted-foreground py-12">Loading menu…</p>
-            ) : meals.length === 0 ? (
-              <p className="col-span-full text-center text-muted-foreground py-12">No meals available</p>
+            ) : filteredMeals.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center gap-3 py-16 text-center">
+                <Search className="h-12 w-12 text-muted-foreground/40" />
+                <p className="text-lg font-medium text-muted-foreground">
+                  {searchQuery.trim() ? "No meals found" : "No meals available"}
+                </p>
+                {searchQuery.trim() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    Clear search
+                  </Button>
+                )}
+              </div>
             ) : (
-              meals.map((m) => (
+              filteredMeals.map((m) => (
                 <MealCard key={m._id} meal={m} />
               ))
             )}

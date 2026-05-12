@@ -9,6 +9,9 @@ import { ordersApi, type Order } from "@/lib/api/orders-api";
 
 export const Route = createFileRoute("/orders/track")({
   head: () => ({ meta: [{ title: "Order tracking — Yummly" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    orderId: (search.orderId as string) || "",
+  }),
   component: TrackPage,
 });
 
@@ -24,14 +27,15 @@ function statusToStep(status: string): number {
     pending: 0,
     received: 0,
     preparing: 1,
-    "on the way": 2,
-    onway: 2,
+    on_the_way: 2,
     delivered: 3,
+    cancelled: 0,
   };
   return map[status.toLowerCase()] ?? 0;
 }
 
 function TrackPage() {
+  const { orderId } = Route.useSearch();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const nav = useNavigate();
@@ -41,15 +45,16 @@ function TrackPage() {
       nav({ to: "/login" });
       return;
     }
+    if (!orderId) {
+        setLoading(false);
+        return;
+    }
     ordersApi
-      .getOrders()
-      .then((orders) => {
-        // Get the most recent order
-        if (orders.length > 0) setOrder(orders[orders.length - 1]);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+        .getOrderById(orderId)
+        .then(setOrder)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+  }, [orderId]);
 
   const current = order ? statusToStep(order.status) : 0;
 
@@ -126,24 +131,6 @@ function TrackPage() {
                 );
               })}
             </ol>
-          </Card>
-
-          <Card className="border-border/60 p-6 shadow-soft">
-            <h2 className="mb-4 text-lg font-semibold">Your driver</h2>
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-primary-foreground shadow-glow">
-                A
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold">Ahmed M.</h3>
-                <p className="text-sm text-muted-foreground">Toyota Corolla · ABC-1234</p>
-              </div>
-              <Button variant="outline" size="icon"><Phone className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon"><MessageSquare className="h-4 w-4" /></Button>
-            </div>
-            <div className="mt-4 flex items-center gap-2 rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 text-primary" /> 0.8 km away — arriving soon
-            </div>
           </Card>
         </div>
 

@@ -91,7 +91,7 @@ function OrdersPage() {
                   {formatDate(o.createdAt)} · {o.items.length} items · ${o.totalPrice.toFixed(2)}
                 </p>
               </div>
-              <Link to="/orders/track">
+              <Link to="/orders/track" search={{ orderId: o._id }}>
                 <Button variant="outline">Track order</Button>
               </Link>
             </Card>
