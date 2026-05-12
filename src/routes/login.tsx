@@ -18,17 +18,42 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+interface FieldErrors {
+  identifier?: string;
+  password?: string;
+}
+
+function validateLoginForm(identifier: string, password: string): FieldErrors {
+  const errors: FieldErrors = {};
+  if (!identifier.trim()) {
+    errors.identifier = "Email or username is required";
+  }
+  if (!password) {
+    errors.password = "Password is required";
+  } else if (password.length < 8) {
+    errors.password = "Password must be at least 8 characters";
+  }
+  return errors;
+}
+
 function LoginPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      setError("");
+      setServerError("");
+
+      // Validate fields
+      const errors = validateLoginForm(identifier, password);
+      setFieldErrors(errors);
+      if (Object.keys(errors).length > 0) return;
+
       setIsLoading(true);
       try {
         const data = await authApi.login(identifier, password);
@@ -54,8 +79,8 @@ function LoginPage() {
         }
 
         navigate({ to: "/" });
-      } catch (err) {
-        setError("Invalid email/username or password");
+      } catch (err: any) {
+        setServerError(err?.message || "Invalid email/username or password");
       } finally {
         setIsLoading(false);
       }
@@ -75,13 +100,37 @@ function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Email or Username</Label>
-            <Input type="text" placeholder="you@example.com or username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
+            <Input
+              type="text"
+              placeholder="you@example.com or username"
+              value={identifier}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                if (fieldErrors.identifier) setFieldErrors((prev) => ({ ...prev, identifier: undefined }));
+              }}
+              className={fieldErrors.identifier ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.identifier && (
+              <p className="text-xs text-red-500">{fieldErrors.identifier}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Password</Label>
-            <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+              }}
+              className={fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.password && (
+              <p className="text-xs text-red-500">{fieldErrors.password}</p>
+            )}
           </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          {serverError && <p className="text-sm text-red-500">{serverError}</p>}
           <Button className="w-full bg-gradient-primary shadow-soft" disabled={isLoading}>
             {isLoading ? "Logging in…" : t("login")}
           </Button>

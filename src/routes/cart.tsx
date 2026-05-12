@@ -206,7 +206,6 @@ function CartPage() {
                     <div className="flex justify-between text-success"><span>Discount</span><span>−${discount.toFixed(2)}</span></div>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Try "YUMMY10" for 10% off</p>
                 <div className="mt-4 flex justify-between border-t border-border pt-4 text-base font-bold">
                   <span>{t("total")}</span><span className="text-primary">${total.toFixed(2)}</span>
                 </div>

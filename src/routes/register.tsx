@@ -17,6 +17,41 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
 });
 
+interface FieldErrors {
+  name?: string;
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
+function validateRegisterForm(name: string, username: string, email: string, password: string): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if (!name.trim()) {
+    errors.name = "Full name is required";
+  }
+
+  if (!username.trim()) {
+    errors.username = "Username is required";
+  } else if (username.trim().length < 3) {
+    errors.username = "Username must be at least 3 characters";
+  }
+
+  if (!email.trim()) {
+    errors.email = "Email is required";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    errors.email = "Please enter a valid email address";
+  }
+
+  if (!password) {
+    errors.password = "Password is required";
+  } else if (password.length < 8) {
+    errors.password = "Password must be at least 8 characters";
+  }
+
+  return errors;
+}
+
 function RegisterPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -24,24 +59,38 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const clearFieldError = (field: keyof FieldErrors) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setServerError("");
+
+    // Validate fields
+    const errors = validateRegisterForm(name, username, email, password);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setIsLoading(true);
     try {
       const data = await authApi.register(name, email, username, password);
       //store the token in local storage
       localStorage.setItem("token", data.token);
       navigate({to:"/"});
-    } catch (err) {
-      setError("Invalid email/username or password");
+    } catch (err: any) {
+      setServerError(err?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-warm p-4">
       <Card className="w-full max-w-md border-border/60 p-8 shadow-card">
@@ -55,21 +104,47 @@ function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Full name</Label>
-            <Input placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              placeholder="Jane Doe"
+              value={name}
+              onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
+              className={fieldErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
           </div>
           <div className="space-y-2">
-            <Label>User name</Label>
-            <Input placeholder="Jane Doe55" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <Label>Username</Label>
+            <Input
+              placeholder="janedoe55"
+              value={username}
+              onChange={(e) => { setUsername(e.target.value); clearFieldError("username"); }}
+              className={fieldErrors.username ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.username && <p className="text-xs text-red-500">{fieldErrors.username}</p>}
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+              className={fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
           </div>
           <div className="space-y-2">
             <Label>Password</Label>
-            <Input type="password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              type="password"
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+              className={fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+            />
+            {fieldErrors.password && <p className="text-xs text-red-500">{fieldErrors.password}</p>}
           </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          {serverError && <p className="text-sm text-red-500">{serverError}</p>}
           <Button className="w-full bg-gradient-primary shadow-soft" disabled={isLoading}>
             {isLoading ? "Signing up…" : t("signup")}
           </Button>
